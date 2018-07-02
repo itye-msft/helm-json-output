@@ -5,5 +5,6 @@ Works for commands: `install`, `status`
 
 Example usage:
 
-    `helm json install stable/rabbitmq`
-    `helm json status my-release-name`
+`helm json install stable/rabbitmq`
+
+`helm json status my-release-name`
