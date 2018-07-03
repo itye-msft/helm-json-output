@@ -43,11 +43,15 @@ Example usage:
         // Extracts the resources section from the response
         string ExtractReleaseName(string output)
         {
-            var reader = new StringReader(output);
-            var firstLine = reader.ReadLine();
-            if(firstLine.StartsWith("NAME:")){
-                var name = firstLine.Replace("NAME:","").Trim();
-                return name;
+            if(!String.IsNullOrWhiteSpace(output)){
+                var reader = new StringReader(output);
+                var firstLine = reader.ReadLine();
+                if(!String.IsNullOrWhiteSpace(firstLine)){
+                    if(firstLine.StartsWith("NAME:")){
+                        var name = firstLine.Replace("NAME:","").Trim();
+                        return name;
+                    }
+                }
             }
             return String.Empty;
         }
