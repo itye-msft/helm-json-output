@@ -22,8 +22,8 @@ namespace jsonplugin
                 var output = cmd.Helm();
                 var releaseName = ExtractReleaseName(output);
                 var unFormattedResources = ParseResources(ExtractResources(output));
-                var stucturedResources = unFormattedResources.Select(x => ConvertToObject(x));
-                var json = JObject.FromObject(new {releaseName=releaseName, resources=JArray.FromObject(stucturedResources)}).ToString();
+                var structuredResources = unFormattedResources.Select(x => ConvertToObject(x));
+                var json = JObject.FromObject(new {releaseName=releaseName, resources=JArray.FromObject(structuredResources)}).ToString();
                 Console.WriteLine(json);
             }
         }
@@ -96,7 +96,7 @@ Example usage:
                         }
                     }
                 }
-                if (matches.Count>0)
+                if (matches.Count > 0)
                 {
                     var s = res.Substring(lastIndex);
                     list.Add(s);
@@ -127,7 +127,7 @@ Example usage:
                     }
                 }
                 return new {
-                    name =name,
+                    name = name,
                     resources = resources
                 };
             }
