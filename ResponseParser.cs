@@ -20,9 +20,10 @@ namespace jsonplugin
             {
                 var cmd = String.Join(" ", args);
                 var output = cmd.Helm();
+                var releaseName = ExtractReleaseName(output);
                 var unFormattedResources = ParseResources(ExtractResources(output));
                 var stucturedResources = unFormattedResources.Select(x => ConvertToObject(x));
-                var json = JArray.FromObject(stucturedResources).ToString();
+                var json = JObject.FromObject(new {releaseName=releaseName, resources=JArray.FromObject(stucturedResources)}).ToString();
                 Console.WriteLine(json);
             }
         }
@@ -37,6 +38,18 @@ Example usage:
     helm json install stable/rabbitmq
     helm json status my-release-name
 ");
+        }
+
+        // Extracts the resources section from the response
+        string ExtractReleaseName(string output)
+        {
+            var reader = new StringReader(output);
+            var firstLine = reader.ReadLine();
+            if(firstLine.StartsWith("NAME:")){
+                var name = firstLine.Replace("NAME:","").Trim();
+                return name;
+            }
+            return String.Empty;
         }
 
         // Extracts the resources section from the response
