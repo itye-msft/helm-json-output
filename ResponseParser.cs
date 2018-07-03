@@ -59,11 +59,13 @@ Example usage:
         // Extracts the resources section from the response
         string ExtractResources(string output)
         {
-            Regex r = new Regex("RESOURCES:(.*?)NOTES:", RegexOptions.Singleline);
-            var m = r.Match(output);
-            if (m.Success)
-            {
-                return m.Groups[1].Value;
+            if(!String.IsNullOrWhiteSpace(output)){
+                Regex r = new Regex("RESOURCES:(.*?)NOTES:", RegexOptions.Singleline);
+                var m = r.Match(output);
+                if (m.Success)
+                {
+                    return m.Groups[1].Value;
+                }
             }
             return null;
         }
@@ -71,30 +73,34 @@ Example usage:
         // Parses out the a list of resources as unformatted text
         List<string> ParseResources(string res)
         {
-            Regex r = new Regex("==> ", RegexOptions.Singleline);
-            var matches = r.Matches(res);
-            var lastIndex = 0;
             var list = new List<string>();
-            foreach (Match m in matches)
+            if(!String.IsNullOrWhiteSpace(res))
             {
-                if (m.Success)
+                Regex r = new Regex("==> ", RegexOptions.Singleline);
+                var matches = r.Matches(res);
+                var lastIndex = 0;
+                
+                foreach (Match m in matches)
                 {
-                    if (lastIndex == 0)
+                    if (m.Success)
                     {
-                        lastIndex = m.Index + m.Length;
-                    }
-                    else
-                    {
-                        var s = res.Substring(lastIndex, m.Index - lastIndex - m.Length);
-                        list.Add(s);
-                        lastIndex = m.Index + m.Length;
+                        if (lastIndex == 0)
+                        {
+                            lastIndex = m.Index + m.Length;
+                        }
+                        else
+                        {
+                            var s = res.Substring(lastIndex, m.Index - lastIndex - m.Length);
+                            list.Add(s);
+                            lastIndex = m.Index + m.Length;
+                        }
                     }
                 }
-            }
-            if (matches.Count>0)
-            {
-                var s = res.Substring(lastIndex);
-                list.Add(s);
+                if (matches.Count>0)
+                {
+                    var s = res.Substring(lastIndex);
+                    list.Add(s);
+                }
             }
             return list;
         }
@@ -102,26 +108,30 @@ Example usage:
         // Converts unfommatted text to structured object file
         dynamic ConvertToObject(string unformattedText)
         {
-            Regex r = new Regex("(.*?)\\s", RegexOptions.Singleline);
-            
-            StringReader reader = new StringReader(unformattedText);
-            string line, name = reader.ReadLine();
-            var resources = new List<string>();
-            while((line = reader.ReadLine()) != null)
+            if(!String.IsNullOrWhiteSpace(unformattedText))
             {
-                if (!String.IsNullOrWhiteSpace(line) && !line.StartsWith("NAME"))
+                Regex r = new Regex("(.*?)\\s", RegexOptions.Singleline);
+                
+                StringReader reader = new StringReader(unformattedText);
+                string line, name = reader.ReadLine();
+                var resources = new List<string>();
+                while((line = reader.ReadLine()) != null)
                 {
-                    var m = r.Match(line);
-                    if (m.Success)
+                    if (!String.IsNullOrWhiteSpace(line) && !line.StartsWith("NAME"))
                     {
-                        resources.Add(m.Groups[1].Value);
+                        var m = r.Match(line);
+                        if (m.Success)
+                        {
+                            resources.Add(m.Groups[1].Value);
+                        }
                     }
                 }
+                return new {
+                    name =name,
+                    resources = resources
+                };
             }
-            return new {
-                name =name,
-                resources = resources
-            };
+            return null;
         }
     }
 }
