@@ -5,12 +5,12 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Linq;
 
-namespace jsonplugin
+namespace HelmJsonOutput
 {
     public class ReponseParser
     {
         ///Entry point to the plugin
-        public void HandleCmd(string[] args)
+        public void ProcessCmd(string[] args)
         {
             if (args.Length > 0 && args[0].ToLower().Equals("help"))
             {
@@ -31,7 +31,7 @@ namespace jsonplugin
         // Prints pretty help
         void PrintUsage()
         {
-            Console.WriteLine(@"Converts helm's output to be in json format.
+            Console.WriteLine(@"Converts helm's output to json format.
 Works for commands: install, status
 
 Example usage:

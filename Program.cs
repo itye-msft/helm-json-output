@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace jsonplugin
+namespace HelmJsonOutput
 {
     class Program
     {
         static void Main(string[] args)
         {
-            new ReponseParser().HandleCmd(args);
+            new ReponseParser().ProcessCmd(args);
         }
     }
 }

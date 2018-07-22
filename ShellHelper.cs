@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System;
 
-namespace jsonplugin
+namespace HelmJsonOutput
 {
  /// A small helper class to execute helm from shell
- public static class ShellHelper
+ public static class ShellExtensions
     {
         public static string Helm(this string args)
         {
