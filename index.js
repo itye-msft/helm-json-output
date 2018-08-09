@@ -44,7 +44,8 @@ function ConvertToObject(resourcesArr) {
       if (line.startsWith('==>')) {
         name = line.substring(4).trim();
       } else if (line.startsWith('NAME') === false) {
-        resources.push(line);
+        const trimmedLine = line.trim();
+        resources.push(trimmedLine.substring(0, trimmedLine.indexOf(' ')));
       }
     });
 
