@@ -5,4 +5,4 @@ description: |-
   Formats the output of helm commands to json.
 ignoreFlags: false
 useTunnel: false
-command: "dotnet $HELM_PLUGIN_DIR/lib/json.dll"
+command: "node $HELM_PLUGIN_DIR/index.js"
