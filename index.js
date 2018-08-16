@@ -1,8 +1,5 @@
 const execFile = require('child_process').execFile;
 
-const helmBinary = process.env.HELM_BIN;
-const args = process.argv;
-
 /**
  * Prints the extension's usage
  */
@@ -16,43 +13,36 @@ function printUsage() {
   process.stdout.write(usage);
 }
 
-// The expected arguments are:
-// ['node', 'js file', 'command', 'chart / release name']
-if (args.length < 4) {
-  printUsage();
-  process.exit(0);
-}
-
 /**
  * Builds a json object from a string array of resources.
  * format example:
- * resourcesArr = ['==> v1beta1/StatefulSet \n
-                    NAME   DESIRED  CURRENT  AGE \n
-                    fun-elk-mariadb  1        1        2s',
-                   '==> v1/Pod(related) \n
-                    NAME   READY  STATUS   RESTARTS  AGE \n
-                    fun-elk-wordpress-665ff69d4b-9kg8x  0/1    Pending  0  2s \n
-                    fun-elk-mariadb-0    0/1    Pending  0   2s']
+ * @param {Array} - The resources strings as returned raw by the helm output. Item example:
+ *                   '==> v1beta1/StatefulSet \n
+ *                    NAME             DESIRED  CURRENT  AGE \n
+ *                    fun-elk-mariadb  1        1        2s'
  */
-function ConvertToObject(resourcesArr) {
+function ConvertToJSON(resources) {
   const json = [];
-  resourcesArr.forEach((element) => {
+  resources.forEach((element) => {
     const lines = element.split('\n');
+    const parsedResources = [];
     let name;
-    const resources = [];
+
     lines.forEach((line) => {
       if (line.startsWith('==>')) {
         name = line.substring(4).trim();
       } else if (line.startsWith('NAME') === false) {
         const trimmedLine = line.trim();
-        resources.push(trimmedLine.substring(0, trimmedLine.indexOf(' ')));
+        parsedResources.push(trimmedLine.substring(0, trimmedLine.indexOf(' ')));
       }
     });
 
-    json.push({
-      name,
-      resources,
-    });
+    if (name !== '') {
+      json.push({
+        name,
+        resources: parsedResources,
+      });
+    }
   });
   return json;
 }
@@ -62,22 +52,13 @@ function ConvertToObject(resourcesArr) {
  * it to the resources array which is returned at the end.
  */
 function ParseResources(resourcesStr) {
-  const array = [];
-
   // Sanity
-  if (resourcesStr.trim() === '') {
-    return array;
+  if ((!resourcesStr) || (resourcesStr.trim() === '')) {
+    return [];
   }
 
-  let ind = 0;
-  let outputCopy = resourcesStr;
-  while (ind !== -1) {
-    ind = outputCopy.lastIndexOf('==> ');
-    array.push(outputCopy.substring(ind).trim());
-    outputCopy = outputCopy.substring(0, ind);
-  }
-
-  return array;
+  const resources = resourcesStr.split('==> ').reverse().map(x => `==> ${x.trim()}`);
+  return resources;
 }
 
 /**
@@ -86,9 +67,10 @@ function ParseResources(resourcesStr) {
  */
 function ExtractResources(helmRawOutput) {
   // Sanity
-  if (helmRawOutput.trim() === '') {
+  if ((!helmRawOutput) || (helmRawOutput.trim() === '')) {
     return '';
   }
+
   const matches = helmRawOutput.match(/(.*RESOURCES:\s+)((.|\n)*)(\s*NOTES:.*)/);
 
   if (matches.length < 3) {
@@ -103,17 +85,30 @@ function ExtractResources(helmRawOutput) {
  */
 function ExtractReleaseName(helmRawOutput) {
   // Sanity
-  if (helmRawOutput.trim() === '') {
+  if ((!helmRawOutput) || (helmRawOutput.trim() === '')) {
     return '';
   }
 
   const lines = helmRawOutput.split('\n');
   const lookup = 'NAME:';
-  if ((lines.length === 0) || (lines[0].startsWith(lookup) === false)) {
+  if (lines.length === 0) {
     return '';
   }
 
-  return lines[0].replace(lookup, '').trim();
+  let result = '';
+  // Iterate through the lines, look for the one starting with a specific prefix,
+  // We expect exactly one release name, other wise something is wrong
+  lines.forEach((line) => {
+    if (line.startsWith(lookup)) {
+      if (result !== '') {
+        throw new Error('Parsing of release name failed');
+      }
+
+      result = line.replace(lookup, '').trim();
+    }
+  });
+
+  return result;
 }
 
 /**
@@ -123,23 +118,35 @@ function ExtractReleaseName(helmRawOutput) {
 function parseResponse(data) {
   const releaseName = ExtractReleaseName(data);
   const unFormattedResources = ParseResources(ExtractResources(data));
-  const structuredResources = ConvertToObject(unFormattedResources);
+  const structuredResources = ConvertToJSON(unFormattedResources);
   return { releaseName, resources: structuredResources };
 }
 
-// Script start:
+function main() {
+  const helmBinary = process.env.HELM_BIN;
+  const args = process.argv;
 
-// remove first two items n the array (which are 'node executable.js') and
-// leave only the exec arguments.
-args.splice(0, 2);
-
-// Execute helm with the given arguments and parse the
-// response
-execFile(helmBinary, args, (err, stdout, stderr) => {
-  if (err) {
-    process.stderr.write(stderr);
-  } else {
-    const json = parseResponse(stdout);
-    process.stdout.write(JSON.stringify(json));
+  // The expected arguments are:
+  // ['node', 'js file', 'command', 'chart / release name']
+  if (args.length < 4) {
+    printUsage();
+    process.exit(0);
   }
-});
+
+  // remove first two items n the array (which are 'node executable.js') and
+  // leave only the exec arguments.
+  args.splice(0, 2);
+
+  // Execute helm with the given arguments and parse the
+  // response
+  execFile(helmBinary, args, (err, stdout, stderr) => {
+    if (err) {
+      process.stderr.write(stderr);
+    } else {
+      const json = parseResponse(stdout);
+      process.stdout.write(JSON.stringify(json));
+    }
+  });
+}
+
+main();
